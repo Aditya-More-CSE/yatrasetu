@@ -10,7 +10,6 @@ import {
   Edit2,
   Trash2,
   Calendar,
-  MapPin,
   Sparkles,
   RotateCcw,
   CheckCircle2,
@@ -22,43 +21,30 @@ import { Booking, BookingType } from '../../types/trip';
 export const TripDashboardView: React.FC = () => {
   const { trip, setScreen, setEditingBooking, deleteBooking, isRecovered, resetDemo } = useTrip();
 
-  // Group bookings by date for chronological timeline view
-  const groupedBookings = trip.bookings.reduce((acc, booking) => {
-    const key = booking.date || 'Upcoming';
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(booking);
-    return acc;
-  }, {} as Record<string, Booking[]>);
-
-  // Counts for sidebar summary
-  const flightCount = trip.bookings.filter((b) => b.type === 'flight').length;
-  const hotelCount = trip.bookings.filter((b) => b.type === 'hotel').length;
-  const trainCount = trip.bookings.filter((b) => b.type === 'train').length;
-  const transferCount = trip.bookings.filter((b) => b.type === 'transfer').length;
-  const activityCount = trip.bookings.filter((b) => b.type === 'activity').length;
+  // Counts for summary
   const totalCost = trip.bookings.reduce((sum, b) => sum + (b.cost || 0), 0);
 
   const getTypeIcon = (type: BookingType) => {
     switch (type) {
       case 'flight':
-        return <Plane className="w-4 h-4 text-blue-700" />;
+        return <Plane className="w-3.5 h-3.5 text-blue-600" />;
       case 'hotel':
-        return <Building className="w-4 h-4 text-slate-700" />;
+        return <Building className="w-3.5 h-3.5 text-slate-600" />;
       case 'transfer':
-        return <Car className="w-4 h-4 text-indigo-700" />;
+        return <Car className="w-3.5 h-3.5 text-indigo-600" />;
       case 'activity':
-        return <Ticket className="w-4 h-4 text-amber-700" />;
+        return <Ticket className="w-3.5 h-3.5 text-amber-600" />;
       case 'train':
-        return <Train className="w-4 h-4 text-emerald-700" />;
+        return <Train className="w-3.5 h-3.5 text-emerald-600" />;
       default:
-        return <Calendar className="w-4 h-4 text-slate-600" />;
+        return <Calendar className="w-3.5 h-3.5 text-slate-500" />;
     }
   };
 
   const getStatusBadge = (booking: Booking) => {
     if (booking.isUpdated || booking.status === 'updated') {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
           <Check className="w-3 h-3" />
           Updated
         </span>
@@ -66,7 +52,7 @@ export const TripDashboardView: React.FC = () => {
     }
     if (booking.status === 'delayed' || booking.status === 'likely_missed') {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
           <AlertTriangle className="w-3 h-3" />
           {booking.statusLabel}
         </span>
@@ -74,7 +60,7 @@ export const TripDashboardView: React.FC = () => {
     }
     if (booking.status === 'checkin_delayed' || booking.status === 'at_risk') {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
           <AlertTriangle className="w-3 h-3" />
           {booking.statusLabel}
         </span>
@@ -82,328 +68,278 @@ export const TripDashboardView: React.FC = () => {
     }
     if (booking.statusLabel === 'Check-in') {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
           Check-in
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded">
         Confirmed
       </span>
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* TOP STATUS BANNER (If Recovered) */}
-        {isRecovered && (
-          <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-emerald-950">
-                  Itinerary Recovered & Synchronized
-                </h4>
-                <p className="text-xs text-emerald-700 mt-0.5">
-                  Recovery plan applied. Downstream bookings have been safely updated and confirmed.
-                </p>
-              </div>
+    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6 font-sans">
+      {/* RECOVERED BANNER */}
+      {isRecovered && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setScreen('updated_itinerary')}
-                className="text-xs font-semibold text-emerald-900 bg-emerald-100/80 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                View Recovery Summary
-              </button>
-              <button
-                onClick={resetDemo}
-                className="text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                title="Reset trip to original schedule"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset Demo</span>
-              </button>
+            <div>
+              <h4 className="text-xs font-bold text-emerald-950">
+                Itinerary Recovered & Synchronized
+              </h4>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                Recovery plan applied. Downstream connections have been safely rescheduled.
+              </p>
             </div>
           </div>
-        )}
-
-        {/* HEADER SECTION */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2.5 mb-2">
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                  isRecovered
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : trip.status === 'Disrupted'
-                    ? 'bg-rose-100 text-rose-800'
-                    : 'bg-emerald-100 text-emerald-800'
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    isRecovered
-                      ? 'bg-emerald-600'
-                      : trip.status === 'Disrupted'
-                      ? 'bg-rose-600'
-                      : 'bg-emerald-600'
-                  }`}
-                ></span>
-                {isRecovered ? 'Stable / Recovered' : trip.status}
-              </span>
-              <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs font-medium text-slate-500">Trip ID: {trip.id}</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              {trip.name}
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 mt-2">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>{trip.destination}</span>
-              </div>
-              <span className="text-slate-300">|</span>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>
-                  {trip.startDate} — {trip.endDate}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* ACTIONS */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setScreen('create_trip')}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-colors shadow-xs"
+              onClick={() => setScreen('updated_itinerary')}
+              className="text-xs font-semibold text-emerald-900 bg-emerald-100 hover:bg-emerald-200/70 px-3 py-1.5 rounded-lg transition-colors"
             >
-              <Edit2 className="w-3.5 h-3.5 text-slate-500" />
-              <span>Edit Trip</span>
+              View Plan Summary
             </button>
-
             <button
-              onClick={() => setScreen('disruption_sim')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all shadow-sm"
+              onClick={resetDemo}
+              className="text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+              title="Reset trip to original schedule"
             >
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <span>Simulate Disruption</span>
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset</span>
             </button>
           </div>
         </div>
+      )}
 
-        {/* MAIN LAYOUT: TIMELINE (LEFT) & SIDEBAR SUMMARY (RIGHT) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* TIMELINE COLUMN */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Itinerary Timeline</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Chronological schedule of confirmed travel segments.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setScreen('create_trip')}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Booking</span>
-                </button>
-              </div>
-
-              {/* TIMELINE DAYS */}
-              {trip.bookings.length === 0 ? (
-                <div className="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl">
-                  <p className="text-sm text-slate-500 mb-3">
-                    You haven't added any bookings to this itinerary yet.
-                  </p>
-                  <button
-                    onClick={() => setScreen('create_trip')}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-medium"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Build Itinerary</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {Object.entries(groupedBookings).map(([date, bookingsForDay]) => (
-                    <div key={date} className="relative">
-                      {/* Day Header Badge */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="px-3 py-1 bg-slate-900 text-white text-xs font-bold tracking-wider rounded-md uppercase">
-                          {date}
-                        </div>
-                        <div className="flex-1 h-[1px] bg-slate-200"></div>
-                      </div>
-
-                      {/* Bookings within this day */}
-                      <div className="space-y-3.5 pl-2 sm:pl-4 border-l-2 border-slate-200 ml-3">
-                        {bookingsForDay.map((booking) => (
-                          <div
-                            key={booking.id}
-                            className={`p-4 rounded-xl border transition-all relative ${
-                              booking.isUpdated
-                                ? 'bg-blue-50/40 border-blue-200/90 shadow-xs'
-                                : 'bg-white hover:bg-slate-50/60 border-slate-200 shadow-xs'
-                            }`}
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                              <div className="flex items-start gap-3.5">
-                                {/* Type Icon */}
-                                <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200/80 flex items-center justify-center shrink-0 mt-0.5">
-                                  {getTypeIcon(booking.type)}
-                                </div>
-
-                                <div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-sm font-semibold text-slate-900">
-                                      {booking.title}
-                                    </span>
-                                    {getStatusBadge(booking)}
-                                  </div>
-
-                                  <div className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
-                                    <span className="font-semibold text-slate-800">
-                                      {booking.time}
-                                    </span>
-                                    <span className="text-slate-300">•</span>
-                                    <span>{booking.routeOrLocation}</span>
-                                  </div>
-
-                                  {booking.notes && (
-                                    <p className="text-[11px] text-slate-500 mt-1">
-                                      {booking.notes}
-                                    </p>
-                                  )}
-
-                                  {booking.changeNote && (
-                                    <p className="text-[11px] font-medium text-blue-800 mt-1.5 bg-blue-100/60 inline-block px-2 py-0.5 rounded">
-                                      ↳ {booking.changeNote}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Right Actions: Edit & Delete Component */}
-                              <div className="flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                                <button
-                                  onClick={() => setEditingBooking(booking)}
-                                  className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 transition-colors"
-                                  title="Edit booking timing or details"
-                                >
-                                  <Edit2 className="w-3 h-3 text-slate-500" />
-                                  <span>Edit</span>
-                                </button>
-                                <button
-                                  onClick={() => deleteBooking(booking.id)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Delete booking"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      {/* DASHBOARD HEADER: Travel Command Center */}
+      <div className="bg-white rounded-xl p-6 border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-1">
+            <span
+              className={`inline-flex items-center gap-1.5 font-bold ${
+                isRecovered
+                  ? 'text-emerald-700'
+                  : trip.status === 'Disrupted'
+                  ? 'text-rose-700'
+                  : 'text-emerald-700'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isRecovered
+                    ? 'bg-emerald-500'
+                    : trip.status === 'Disrupted'
+                    ? 'bg-rose-500'
+                    : 'bg-emerald-500'
+                }`}
+              ></span>
+              {isRecovered ? 'Stable / Recovered' : trip.status}
+            </span>
+            <span>•</span>
+            <span>{trip.destination}</span>
           </div>
 
-          {/* SIDEBAR SUMMARY COLUMN */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {trip.name}
+          </h1>
+
+          <div className="text-xs text-slate-500 mt-1 font-medium">
+            {trip.startDate} — {trip.endDate}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={() => setScreen('create_trip')}
+            className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors shadow-2xs flex items-center gap-1.5"
+          >
+            <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+            <span>Edit Trip</span>
+          </button>
+
+          <button
+            onClick={() => setScreen('disruption_sim')}
+            className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-all shadow-xs flex items-center gap-2"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <span>Simulate Disruption</span>
+          </button>
+        </div>
+      </div>
+
+      {/* OPERATIONAL INTERFACE: TIMELINE (LEFT) & SUMMARY (RIGHT) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* TIMELINE COLUMN */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white rounded-xl p-6 border border-slate-200/90 shadow-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Trip Summary</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Overview of current reservation metrics.
-                </p>
-              </div>
-
-              {/* Counts Breakdown */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100">
-                  <span className="text-slate-600 font-medium">Total Itinerary Items</span>
-                  <span className="font-bold text-slate-900">{trip.bookings.length}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Plane className="w-3.5 h-3.5 text-blue-700" />
-                    <span>Flight segments</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{flightCount}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Building className="w-3.5 h-3.5 text-slate-700" />
-                    <span>Hotel nights</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{hotelCount}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Car className="w-3.5 h-3.5 text-indigo-700" />
-                    <span>Airport transfers</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{transferCount}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Ticket className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Activities & tours</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{activityCount}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Train className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>Train connections</span>
-                  </div>
-                  <span className="font-semibold text-slate-800">{trainCount}</span>
+                <h2 className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                  Operational Timeline
+                </h2>
+                <div className="text-sm font-bold text-slate-900 mt-0.5">
+                  Chronological Connection Rail
                 </div>
               </div>
 
-              {/* Total Trip Cost */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                  Total Tracked Trip Cost
-                </span>
-                <div className="text-2xl font-bold text-slate-900 mt-1">
-                  ₹{totalCost.toLocaleString('en-IN')}
-                </div>
-                <span className="text-[11px] text-slate-500 mt-0.5 block">
-                  Includes airfare, chauffeur, hotel & tours.
-                </span>
-              </div>
+              <button
+                onClick={() => setScreen('create_trip')}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Item</span>
+              </button>
+            </div>
 
-              {/* Quick Simulation CTA */}
-              <div className="pt-2">
+            {/* Vertical Rail Timeline */}
+            {trip.bookings.length === 0 ? (
+              <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl">
+                <p className="text-xs text-slate-500 mb-3">No bookings added to this itinerary yet.</p>
                 <button
-                  onClick={() => setScreen('disruption_sim')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
+                  onClick={() => setScreen('create_trip')}
+                  className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-medium"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Simulate Disruption</span>
+                  Add First Booking
                 </button>
               </div>
+            ) : (
+              <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[35px] before:top-3 before:bottom-3 before:w-[2px] before:bg-slate-200">
+                {trip.bookings.map((booking, idx) => (
+                  <div key={booking.id} className="relative flex items-start gap-4 group">
+                    {/* Time Column */}
+                    <div className="w-16 shrink-0 text-right pt-0.5">
+                      <span className="text-xs font-mono font-bold text-slate-700 block">
+                        {booking.time.split(' ')[0]}
+                      </span>
+                      <span className="text-[10px] text-slate-400 uppercase font-medium">
+                        {booking.time.split(' ')[1] || ''}
+                      </span>
+                    </div>
+
+                    {/* Timeline Node Icon */}
+                    <div className="relative z-10 w-7 h-7 rounded-full bg-white border-2 border-slate-300 flex items-center justify-center shrink-0 shadow-2xs group-hover:border-slate-800 transition-colors">
+                      {getTypeIcon(booking.type)}
+                    </div>
+
+                    {/* Compact Item Data Row / Card */}
+                    <div
+                      className={`flex-1 p-3.5 rounded-lg border transition-all ${
+                        booking.isUpdated
+                          ? 'bg-blue-50/40 border-blue-200'
+                          : 'bg-white hover:bg-slate-50/70 border-slate-200/80 shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">
+                              {booking.title}
+                            </span>
+                            {getStatusBadge(booking)}
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {booking.date}
+                            </span>
+                          </div>
+
+                          <div className="text-xs text-slate-600 mt-1 font-medium">
+                            {booking.routeOrLocation}
+                          </div>
+
+                          {booking.notes && (
+                            <div className="text-[11px] text-slate-500 mt-1">
+                              {booking.notes}
+                            </div>
+                          )}
+
+                          {booking.changeNote && (
+                            <div className="text-[11px] text-blue-800 font-medium mt-1.5 bg-blue-100/60 inline-block px-2 py-0.5 rounded">
+                              ↳ {booking.changeNote}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Inline Actions */}
+                        <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100">
+                          <button
+                            onClick={() => setEditingBooking(booking)}
+                            className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => deleteBooking(booking.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT SUMMARY PANEL */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl p-5 border border-slate-200/90 shadow-xs space-y-4 sticky top-20">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                Summary
+              </span>
+              <h3 className="text-sm font-bold text-slate-900 mt-0.5">Trip Summary</h3>
+            </div>
+
+            <div className="space-y-2.5 py-3 border-y border-slate-100 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Bookings count:</span>
+                <span className="font-bold text-slate-900">{trip.bookings.length} bookings</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Status:</span>
+                <span className="font-bold text-emerald-700 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                  {isRecovered ? 'Stable' : trip.status}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Tracked Cost:</span>
+                <span className="font-mono font-bold text-slate-900">
+                  ₹{totalCost.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="pt-1 space-y-2">
+              <button
+                onClick={() => setScreen('disruption_sim')}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-xs transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                <span>Simulate Disruption</span>
+              </button>
+
+              <button
+                onClick={() => setScreen('create_trip')}
+                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Booking</span>
+              </button>
             </div>
           </div>
         </div>

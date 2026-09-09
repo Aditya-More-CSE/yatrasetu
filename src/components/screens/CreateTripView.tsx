@@ -11,9 +11,9 @@ import {
   Edit2,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import { Booking, BookingType } from '../../types/trip';
 
@@ -21,10 +21,10 @@ export const CreateTripView: React.FC = () => {
   const { setScreen, updateTripMeta, addBooking, deleteBooking, updateBooking, trip } = useTrip();
 
   // Step 1: Base Trip Details
-  const [tripName, setTripName] = useState(trip.name || 'Autumn in Europe');
-  const [destination, setDestination] = useState(trip.destination || 'Paris & Amsterdam');
-  const [startDate, setStartDate] = useState('2026-09-18');
-  const [endDate, setEndDate] = useState('2026-09-22');
+  const [tripName, setTripName] = useState(trip.name || 'Paris & Amsterdam');
+  const [destination, setDestination] = useState(trip.destination || 'Paris, France');
+  const [startDate, setStartDate] = useState(trip.startDate || '2026-09-18');
+  const [endDate, setEndDate] = useState(trip.endDate || '2026-09-24');
   const [isBaseSaved, setIsBaseSaved] = useState(true);
 
   // Active form state for adding a component
@@ -65,7 +65,7 @@ export const CreateTripView: React.FC = () => {
       setValidationError('Please enter a destination.');
       return;
     }
-    if (new Date(startDate) > new Date(endDate)) {
+    if (startDate > endDate) {
       setValidationError('Start date must be before or equal to end date.');
       return;
     }
@@ -98,7 +98,7 @@ export const CreateTripView: React.FC = () => {
         date: flightDep.split(',')[0] || '18 Sep',
         time: flightDep.split(',')[1]?.trim() || '10:40 AM',
         endTime: flightArr.split(',')[1]?.trim() || '4:15 PM',
-        cost: 45000,
+        cost: 48500,
         status: 'confirmed',
         statusLabel: 'Confirmed',
         notes: `Departure: ${flightDep} • Arrival: ${flightArr}`,
@@ -114,7 +114,7 @@ export const CreateTripView: React.FC = () => {
         routeOrLocation: hotelLocation || 'City Center',
         date: hotelCheckIn.split(',')[0] || '18 Sep',
         time: hotelCheckIn.split(',')[1]?.trim() || '9:00 PM',
-        cost: 32000,
+        cost: 36000,
         status: 'confirmed',
         statusLabel: 'Check-in',
         notes: `Check-in: ${hotelCheckIn} • Check-out: ${hotelCheckOut}`,
@@ -130,7 +130,7 @@ export const CreateTripView: React.FC = () => {
         routeOrLocation: `${trainFrom} → ${trainTo}`,
         date: trainTime.split(',')[0] || '20 Sep',
         time: trainTime.split(',')[1]?.trim() || '8:30 AM',
-        cost: 6500,
+        cost: 6800,
         status: 'confirmed',
         statusLabel: 'Confirmed',
         notes: `Departure: ${trainTime}`,
@@ -219,511 +219,480 @@ export const CreateTripView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-4xl mx-auto">
-        {/* Back Link */}
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            onClick={() => setScreen('landing')}
-            className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </button>
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Step 1 of Itinerary Setup
-          </span>
-        </div>
-
-        {/* Validation Banner */}
-        {validationError && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
+    <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6 font-sans">
+      {/* Validation Banner */}
+      {validationError && (
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{validationError}</span>
           </div>
-        )}
+          <button onClick={() => setValidationError(null)} className="text-rose-500 hover:text-rose-800">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
-        {/* CARD 1: Create Your Trip */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
-          <div className="flex items-center justify-between pb-6 border-b border-slate-100">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Create your trip</h1>
-              <p className="text-sm text-slate-500 mt-1">
-                Enter foundational destination and dates for this journey.
-              </p>
-            </div>
-            {isBaseSaved && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Base Details Set
-              </span>
-            )}
+      {/* CARD 1: Base Trip Details */}
+      <div className="bg-white rounded-xl p-6 border border-slate-200/90 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+              Trip Details
+            </span>
+            <h1 className="text-lg font-bold text-slate-900 mt-0.5">Create your trip</h1>
           </div>
-
-          <form onSubmit={handleSaveBaseTrip} className="mt-6 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Trip name
-                </label>
-                <input
-                  type="text"
-                  value={tripName}
-                  onChange={(e) => setTripName(e.target.value)}
-                  placeholder="e.g. European Journey"
-                  required
-                  className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Destination
-                </label>
-                <input
-                  type="text"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  placeholder="e.g. Paris & Amsterdam"
-                  required
-                  className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Start date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  required
-                  className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  End date
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  required
-                  className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
-              >
-                Create Trip
-              </button>
-            </div>
-          </form>
+          {isBaseSaved && (
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Saved
+            </span>
+          )}
         </div>
 
-        {/* CARD 2: Build Your Itinerary */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-100 gap-3">
+        <form onSubmit={handleSaveBaseTrip} className="space-y-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Build your itinerary</h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Add travel components: Flight, Hotel, Train, Transfer, or Activity.
-              </p>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Trip name
+              </label>
+              <input
+                type="text"
+                value={tripName}
+                onChange={(e) => setTripName(e.target.value)}
+                placeholder="e.g. Paris & Amsterdam"
+                required
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900"
+              />
             </div>
 
-            {/* Quick Component Add Selectors */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => { setActiveComponentType('flight'); setEditingId(null); }}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  activeComponentType === 'flight'
-                    ? 'bg-blue-900 text-white border-blue-900'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <Plane className="w-3.5 h-3.5" />
-                <span>+ Flight</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setActiveComponentType('transfer'); setEditingId(null); }}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  activeComponentType === 'transfer'
-                    ? 'bg-blue-900 text-white border-blue-900'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <Car className="w-3.5 h-3.5" />
-                <span>+ Transfer</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setActiveComponentType('hotel'); setEditingId(null); }}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  activeComponentType === 'hotel'
-                    ? 'bg-blue-900 text-white border-blue-900'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <Building className="w-3.5 h-3.5" />
-                <span>+ Hotel</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setActiveComponentType('activity'); setEditingId(null); }}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  activeComponentType === 'activity'
-                    ? 'bg-blue-900 text-white border-blue-900'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <Ticket className="w-3.5 h-3.5" />
-                <span>+ Activity</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setActiveComponentType('train'); setEditingId(null); }}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  activeComponentType === 'train'
-                    ? 'bg-blue-900 text-white border-blue-900'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <Train className="w-3.5 h-3.5" />
-                <span>+ Train</span>
-              </button>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Destination
+              </label>
+              <input
+                type="text"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="e.g. Paris, France"
+                required
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900"
+              />
             </div>
           </div>
 
-          {/* ACTIVE COMPONENT FORM */}
-          {activeComponentType && (
-            <div className="mt-6 p-5 bg-slate-50 rounded-xl border border-slate-200 animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs uppercase font-bold tracking-wider text-blue-900 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-700"></span>
-                  {editingId ? 'Edit' : 'Add'} {activeComponentType.toUpperCase()}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => { setActiveComponentType(null); setEditingId(null); }}
-                  className="text-xs text-slate-500 hover:text-slate-800"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              <form onSubmit={handleAddComponent} className="space-y-4">
-                {activeComponentType === 'flight' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">From</label>
-                      <input
-                        type="text"
-                        value={flightFrom}
-                        onChange={(e) => setFlightFrom(e.target.value)}
-                        placeholder="e.g. Mumbai (BOM)"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">To</label>
-                      <input
-                        type="text"
-                        value={flightTo}
-                        onChange={(e) => setFlightTo(e.target.value)}
-                        placeholder="e.g. Paris (CDG)"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Departure date/time</label>
-                      <input
-                        type="text"
-                        value={flightDep}
-                        onChange={(e) => setFlightDep(e.target.value)}
-                        placeholder="e.g. 18 Sep, 10:40 AM"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Arrival date/time</label>
-                      <input
-                        type="text"
-                        value={flightArr}
-                        onChange={(e) => setFlightArr(e.target.value)}
-                        placeholder="e.g. 18 Sep, 4:15 PM"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeComponentType === 'hotel' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Hotel name</label>
-                      <input
-                        type="text"
-                        value={hotelName}
-                        onChange={(e) => setHotelName(e.target.value)}
-                        placeholder="e.g. Hotel Lumière"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Location</label>
-                      <input
-                        type="text"
-                        value={hotelLocation}
-                        onChange={(e) => setHotelLocation(e.target.value)}
-                        placeholder="e.g. 9th Arr., Paris"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Check-in</label>
-                      <input
-                        type="text"
-                        value={hotelCheckIn}
-                        onChange={(e) => setHotelCheckIn(e.target.value)}
-                        placeholder="e.g. 18 Sep, 9:00 PM"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Check-out</label>
-                      <input
-                        type="text"
-                        value={hotelCheckOut}
-                        onChange={(e) => setHotelCheckOut(e.target.value)}
-                        placeholder="e.g. 20 Sep, 10:00 AM"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeComponentType === 'train' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">From</label>
-                      <input
-                        type="text"
-                        value={trainFrom}
-                        onChange={(e) => setTrainFrom(e.target.value)}
-                        placeholder="e.g. Paris Gare du Nord"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">To</label>
-                      <input
-                        type="text"
-                        value={trainTo}
-                        onChange={(e) => setTrainTo(e.target.value)}
-                        placeholder="e.g. Amsterdam Centraal"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Date/time</label>
-                      <input
-                        type="text"
-                        value={trainTime}
-                        onChange={(e) => setTrainTime(e.target.value)}
-                        placeholder="e.g. 20 Sep, 8:30 AM"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeComponentType === 'transfer' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Pickup</label>
-                      <input
-                        type="text"
-                        value={transferPickup}
-                        onChange={(e) => setTransferPickup(e.target.value)}
-                        placeholder="e.g. CDG Terminal 2E"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Drop-off</label>
-                      <input
-                        type="text"
-                        value={transferDropoff}
-                        onChange={(e) => setTransferDropoff(e.target.value)}
-                        placeholder="e.g. Hotel Lumière"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Date/time</label>
-                      <input
-                        type="text"
-                        value={transferTime}
-                        onChange={(e) => setTransferTime(e.target.value)}
-                        placeholder="e.g. 18 Sep, 7:30 PM"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeComponentType === 'activity' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Activity name</label>
-                      <input
-                        type="text"
-                        value={activityName}
-                        onChange={(e) => setActivityName(e.target.value)}
-                        placeholder="e.g. Eiffel Tower Tour"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Location</label>
-                      <input
-                        type="text"
-                        value={activityLocation}
-                        onChange={(e) => setActivityLocation(e.target.value)}
-                        placeholder="e.g. Champ de Mars, Paris"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Date/time</label>
-                      <input
-                        type="text"
-                        value={activityTime}
-                        onChange={(e) => setActivityTime(e.target.value)}
-                        placeholder="e.g. 19 Sep, 10:00 AM"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
-                  >
-                    {editingId ? 'Update Item' : 'Add Item to Itinerary'}
-                  </button>
-                </div>
-              </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Start date
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900"
+              />
             </div>
-          )}
 
-          {/* ITINERARY ITEMS LIST */}
-          <div className="mt-6 space-y-3">
-            {trip.bookings.length === 0 ? (
-              <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl">
-                <p className="text-sm text-slate-500">
-                  No itinerary components added yet. Use the buttons above to add a flight, hotel, or transfer.
-                </p>
-              </div>
-            ) : (
-              trip.bookings.map((booking, index) => (
-                <div
-                  key={booking.id}
-                  className="flex items-center justify-between p-4 bg-slate-50/70 hover:bg-slate-50 rounded-xl border border-slate-200/80 transition-colors"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
-                      {booking.type === 'flight' && <Plane className="w-4 h-4 text-blue-700" />}
-                      {booking.type === 'hotel' && <Building className="w-4 h-4 text-slate-700" />}
-                      {booking.type === 'transfer' && <Car className="w-4 h-4 text-indigo-700" />}
-                      {booking.type === 'activity' && <Ticket className="w-4 h-4 text-amber-700" />}
-                      {booking.type === 'train' && <Train className="w-4 h-4 text-emerald-700" />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-900">{booking.title}</span>
-                        <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-1.5 py-0.2 rounded font-medium">
-                          {booking.date}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-600 mt-0.5">
-                        {booking.routeOrLocation} • <span className="font-medium text-slate-800">{booking.time}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEditComponent(booking)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white rounded-lg transition-colors"
-                      title="Edit component"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteBooking(booking.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-colors"
-                      title="Delete component"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                End date
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900"
+              />
+            </div>
           </div>
 
-          {/* PRIMARY ACTION */}
-          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs text-slate-500">
-              {trip.bookings.length} component{trip.bookings.length === 1 ? '' : 's'} defined in trip.
-            </div>
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+            >
+              Save Details
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* CARD 2: Build Your Itinerary */}
+      <div className="bg-white rounded-xl p-6 border border-slate-200/90 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+          <div>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+              Components
+            </span>
+            <h2 className="text-lg font-bold text-slate-900 mt-0.5">Build your itinerary</h2>
+          </div>
+
+          {/* Quick Component Add Selectors */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => { setActiveComponentType('flight'); setEditingId(null); }}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                activeComponentType === 'flight'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+            >
+              <Plane className="w-3 h-3 text-blue-600" />
+              <span>+ Flight</span>
+            </button>
 
             <button
               type="button"
-              onClick={handleContinueToTrip}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-all shadow-sm"
+              onClick={() => { setActiveComponentType('transfer'); setEditingId(null); }}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                activeComponentType === 'transfer'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
             >
-              <span>Continue to Trip</span>
-              <ArrowRight className="w-4 h-4" />
+              <Car className="w-3 h-3 text-indigo-600" />
+              <span>+ Transfer</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setActiveComponentType('hotel'); setEditingId(null); }}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                activeComponentType === 'hotel'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+            >
+              <Building className="w-3 h-3 text-slate-600" />
+              <span>+ Hotel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setActiveComponentType('activity'); setEditingId(null); }}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                activeComponentType === 'activity'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+            >
+              <Ticket className="w-3 h-3 text-amber-600" />
+              <span>+ Activity</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setActiveComponentType('train'); setEditingId(null); }}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                activeComponentType === 'train'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+            >
+              <Train className="w-3 h-3 text-emerald-600" />
+              <span>+ Train</span>
             </button>
           </div>
+        </div>
+
+        {/* ACTIVE COMPONENT FORM (Only appears when adding/editing) */}
+        {activeComponentType && (
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase font-bold tracking-wider text-slate-700">
+                {editingId ? 'Edit' : 'Add'} {activeComponentType}
+              </span>
+              <button
+                type="button"
+                onClick={() => { setActiveComponentType(null); setEditingId(null); }}
+                className="text-xs text-slate-400 hover:text-slate-700"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handleAddComponent} className="space-y-3">
+              {activeComponentType === 'flight' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">From</label>
+                    <input
+                      type="text"
+                      value={flightFrom}
+                      onChange={(e) => setFlightFrom(e.target.value)}
+                      placeholder="e.g. Mumbai (BOM)"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">To</label>
+                    <input
+                      type="text"
+                      value={flightTo}
+                      onChange={(e) => setFlightTo(e.target.value)}
+                      placeholder="e.g. Paris (CDG)"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Departure</label>
+                    <input
+                      type="text"
+                      value={flightDep}
+                      onChange={(e) => setFlightDep(e.target.value)}
+                      placeholder="e.g. 18 Sep, 10:40 AM"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Arrival</label>
+                    <input
+                      type="text"
+                      value={flightArr}
+                      onChange={(e) => setFlightArr(e.target.value)}
+                      placeholder="e.g. 18 Sep, 4:15 PM"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeComponentType === 'hotel' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Hotel name</label>
+                    <input
+                      type="text"
+                      value={hotelName}
+                      onChange={(e) => setHotelName(e.target.value)}
+                      placeholder="e.g. Hotel Lumière"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Location</label>
+                    <input
+                      type="text"
+                      value={hotelLocation}
+                      onChange={(e) => setHotelLocation(e.target.value)}
+                      placeholder="e.g. 9th Arr., Paris"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Check-in</label>
+                    <input
+                      type="text"
+                      value={hotelCheckIn}
+                      onChange={(e) => setHotelCheckIn(e.target.value)}
+                      placeholder="e.g. 18 Sep, 9:00 PM"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Check-out</label>
+                    <input
+                      type="text"
+                      value={hotelCheckOut}
+                      onChange={(e) => setHotelCheckOut(e.target.value)}
+                      placeholder="e.g. 20 Sep, 10:00 AM"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeComponentType === 'train' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">From</label>
+                    <input
+                      type="text"
+                      value={trainFrom}
+                      onChange={(e) => setTrainFrom(e.target.value)}
+                      placeholder="e.g. Paris Gare du Nord"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">To</label>
+                    <input
+                      type="text"
+                      value={trainTo}
+                      onChange={(e) => setTrainTo(e.target.value)}
+                      placeholder="e.g. Amsterdam Centraal"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Date/time</label>
+                    <input
+                      type="text"
+                      value={trainTime}
+                      onChange={(e) => setTrainTime(e.target.value)}
+                      placeholder="e.g. 20 Sep, 8:30 AM"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeComponentType === 'transfer' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Pickup</label>
+                    <input
+                      type="text"
+                      value={transferPickup}
+                      onChange={(e) => setTransferPickup(e.target.value)}
+                      placeholder="e.g. CDG Terminal 2E"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Drop-off</label>
+                    <input
+                      type="text"
+                      value={transferDropoff}
+                      onChange={(e) => setTransferDropoff(e.target.value)}
+                      placeholder="e.g. Hotel Lumière"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Date/time</label>
+                    <input
+                      type="text"
+                      value={transferTime}
+                      onChange={(e) => setTransferTime(e.target.value)}
+                      placeholder="e.g. 18 Sep, 7:30 PM"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeComponentType === 'activity' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Activity</label>
+                    <input
+                      type="text"
+                      value={activityName}
+                      onChange={(e) => setActivityName(e.target.value)}
+                      placeholder="e.g. Eiffel Tower Tour"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Location</label>
+                    <input
+                      type="text"
+                      value={activityLocation}
+                      onChange={(e) => setActivityLocation(e.target.value)}
+                      placeholder="e.g. Champ de Mars"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Date/time</label>
+                    <input
+                      type="text"
+                      value={activityTime}
+                      onChange={(e) => setActivityTime(e.target.value)}
+                      placeholder="e.g. 19 Sep, 10:00 AM"
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setActiveComponentType(null); setEditingId(null); }}
+                  className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-semibold shadow-2xs"
+                >
+                  {editingId ? 'Update' : 'Save Component'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Existing Items in Itinerary */}
+        <div className="space-y-2 pt-1">
+          {trip.bookings.map((booking) => (
+            <div
+              key={booking.id}
+              className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-slate-900">{booking.title}</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-slate-600">{booking.routeOrLocation}</span>
+                <span className="text-slate-400">•</span>
+                <span className="font-mono text-slate-500">{booking.date}, {booking.time}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => startEditComponent(booking)}
+                  className="p-1 text-slate-400 hover:text-slate-800 rounded"
+                  title="Edit"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteBooking(booking.id)}
+                  className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Action button */}
+        <div className="pt-4 flex items-center justify-end border-t border-slate-100">
+          <button
+            type="button"
+            onClick={handleContinueToTrip}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-xs"
+          >
+            <span>Continue to Trip</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </div>
