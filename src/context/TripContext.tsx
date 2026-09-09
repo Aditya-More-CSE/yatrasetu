@@ -1,371 +1,410 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
+  Trip,
   Booking,
-  DisruptionScenario,
-  RecoveryPlan,
-  PreferenceWeights,
-  ImpactBreakdown,
-  ChangeLogEntry,
-  RiskAlert,
-  TripSummary,
+  ScreenType,
+  DisruptionType,
+  RecoveryPlanOption,
 } from '../types/trip';
-import { INITIAL_BOOKINGS, DISRUPTION_SCENARIOS, INITIAL_ALERTS } from '../data/seedData';
-import { calculateRippleEffects } from '../engine/dependencyGraph';
-import { BASE_RECOVERY_PLANS, rankRecoveryPlans } from '../engine/recoveryRanking';
+import { INITIAL_DEMO_TRIP } from '../data/mockData';
+import { computeDynamicImpact, DynamicImpactResult } from '../utils/impactEngine';
 
 interface TripContextType {
-  currentPage: 'landing' | 'auth' | 'app';
-  setCurrentPage: (page: 'landing' | 'auth' | 'app') => void;
-  trips: TripSummary[];
-  currentTripId: string;
-  setCurrentTripId: (id: string) => void;
-  isCreateTripOpen: boolean;
-  setIsCreateTripOpen: (open: boolean) => void;
-  createTrip: (trip: Omit<TripSummary, 'id' | 'hasDisruption' | 'statusText'>) => void;
-  bookings: Booking[];
-  disruptions: DisruptionScenario[];
-  activeDisruption: DisruptionScenario | null;
-  impact: ImpactBreakdown;
-  recoveryPlans: RecoveryPlan[];
-  selectedPlan: RecoveryPlan | null;
+  screen: ScreenType;
+  setScreen: (s: ScreenType) => void;
+  trip: Trip;
+  delayMinutes: number;
+  setDelayMinutes: (m: number) => void;
+  disruptionChoice: DisruptionType;
+  setDisruptionChoice: (d: DisruptionType) => void;
+  selectedFlightId: string;
+  setSelectedFlightId: (id: string) => void;
+  selectedPlanId: 'recommended' | 'lowest_cost' | 'fastest';
+  setSelectedPlanId: (id: 'recommended' | 'lowest_cost' | 'fastest') => void;
   isRecovered: boolean;
-  weights: PreferenceWeights;
-  changeHistory: ChangeLogEntry[];
-  alerts: RiskAlert[];
-  activeTab: 'mytrip' | 'impact' | 'recovery' | 'graph' | 'alerts' | 'settings' | 'whatif' | 'trips_list';
-  selectedBooking: Booking | null;
-  isAssistantOpen: boolean;
-  isChangeHistoryOpen: boolean;
-  isDisruptionModalOpen: boolean;
-  disruptionStep: 'what_happened' | 'delay_amount' | 'analyzing' | 'impact_result';
-  selectedDisruptionReason: string;
-  delayHours: number;
-  setActiveTab: (tab: 'mytrip' | 'impact' | 'recovery' | 'graph' | 'alerts' | 'settings' | 'whatif' | 'trips_list') => void;
-  setSelectedBooking: (b: Booking | null) => void;
-  setIsAssistantOpen: (open: boolean) => void;
-  setIsChangeHistoryOpen: (open: boolean) => void;
-  setIsDisruptionModalOpen: (open: boolean) => void;
-  setDisruptionStep: (step: 'what_happened' | 'delay_amount' | 'analyzing' | 'impact_result') => void;
-  setSelectedDisruptionReason: (reason: string) => void;
-  setDelayHours: (hours: number) => void;
-  applyReportedDisruption: (hours: number) => void;
-  applyDisruption: (scenarioId: string) => void;
-  resetTrip: () => void;
-  updateWeights: (weights: Partial<PreferenceWeights>) => void;
-  applyRecoveryPlan: (planId: string) => void;
+  impactResult: DynamicImpactResult;
+  selectedPlan: RecoveryPlanOption;
+  isApplyingPlan: boolean;
+  loadDemoTrip: () => void;
+  resetDemo: () => void;
+  updateTripMeta: (meta: { name: string; destination: string; startDate: string; endDate: string }) => void;
+  addBooking: (b: Omit<Booking, 'id'>) => void;
+  updateBooking: (id: string, updates: Partial<Booking>) => void;
+  deleteBooking: (id: string) => void;
+  runDisruptionSimulation: () => void;
+  applyRecoveryPlan: (planId: 'recommended' | 'lowest_cost' | 'fastest') => void;
+  editingBooking: Booking | null;
+  setEditingBooking: (b: Booking | null) => void;
+  isSignInModalOpen: boolean;
+  setIsSignInModalOpen: (open: boolean) => void;
 }
 
 const TripContext = createContext<TripContextType | undefined>(undefined);
 
 export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'auth' | 'app'>('landing');
-  const [currentTripId, setCurrentTripId] = useState<string>('trip-paris');
-  const [isCreateTripOpen, setIsCreateTripOpen] = useState<boolean>(false);
-
-  const [trips, setTrips] = useState<TripSummary[]>([
-    {
-      id: 'trip-paris',
-      title: 'Paris & Amsterdam',
-      route: 'Mumbai → Paris → Amsterdam',
-      origin: 'Mumbai (BOM)',
-      destination: 'Paris (CDG)',
-      startDate: '12 Apr 2025',
-      endDate: '20 Apr 2025',
-      bookingCount: 5,
-      hasDisruption: true,
-      bookingsAffected: 3,
-      statusText: '⚠ 1 disruption • 3 bookings affected',
-    },
-  ]);
-
-  const [activeDisruption, setActiveDisruption] = useState<DisruptionScenario | null>(
-    DISRUPTION_SCENARIOS[0] // Pre-seeded 2h delay for realistic demo
-  );
+  const [screen, setScreen] = useState<ScreenType>('landing');
+  const [trip, setTrip] = useState<Trip>(INITIAL_DEMO_TRIP);
+  const [delayMinutes, setDelayMinutes] = useState<number>(180); // Default 3 hours (180 mins)
+  const [disruptionChoice, setDisruptionChoice] = useState<DisruptionType>('flight_delayed');
+  const [selectedFlightId, setSelectedFlightId] = useState<string>('b-flight');
+  const [selectedPlanId, setSelectedPlanId] = useState<'recommended' | 'lowest_cost' | 'fastest'>('recommended');
   const [isRecovered, setIsRecovered] = useState<boolean>(false);
-  const [selectedPlan, setSelectedPlan] = useState<RecoveryPlan | null>(null);
-  const [activeTab, setActiveTab] = useState<'mytrip' | 'impact' | 'recovery' | 'graph' | 'alerts' | 'settings' | 'whatif' | 'trips_list'>('mytrip');
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
-  const [isChangeHistoryOpen, setIsChangeHistoryOpen] = useState<boolean>(false);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState<boolean>(false);
+  const [isApplyingPlan, setIsApplyingPlan] = useState<boolean>(false);
 
-  // Disruption report wizard state
-  const [isDisruptionModalOpen, setIsDisruptionModalOpen] = useState<boolean>(false);
-  const [disruptionStep, setDisruptionStep] = useState<'what_happened' | 'delay_amount' | 'analyzing' | 'impact_result'>('what_happened');
-  const [selectedDisruptionReason, setSelectedDisruptionReason] = useState<string>('Flight delayed');
-  const [delayHours, setDelayHours] = useState<number>(2);
+  // Persistence to local storage for page reload resilience
+  useEffect(() => {
+    try {
+      const savedTrip = localStorage.getItem('yatrasetu_trip');
+      const savedRecovered = localStorage.getItem('yatrasetu_recovered');
+      const savedDelay = localStorage.getItem('yatrasetu_delay');
+      if (savedTrip) {
+        setTrip(JSON.parse(savedTrip));
+      }
+      if (savedRecovered) {
+        setIsRecovered(savedRecovered === 'true');
+      }
+      if (savedDelay) {
+        setDelayMinutes(Number(savedDelay));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  const [weights, setWeights] = useState<PreferenceWeights>({
-    budget: 5,
-    time: 7,
-    experience: 9,
-    preserveActivities: true,
-    avoidChangingHotels: true,
-  });
+  const persistTrip = (newTrip: Trip, recoveredState?: boolean, delayMins?: number) => {
+    setTrip(newTrip);
+    try {
+      localStorage.setItem('yatrasetu_trip', JSON.stringify(newTrip));
+      if (recoveredState !== undefined) {
+        setIsRecovered(recoveredState);
+        localStorage.setItem('yatrasetu_recovered', String(recoveredState));
+      }
+      if (delayMins !== undefined) {
+        localStorage.setItem('yatrasetu_delay', String(delayMins));
+      }
+    } catch {
+      // ignore
+    }
+  };
 
-  const [changeHistory, setChangeHistory] = useState<ChangeLogEntry[]>([
-    {
-      id: 'ch-1',
-      time: '09:30 AM',
-      bookingTitle: 'Itinerary Initialized',
-      bookingType: 'flight',
-      action: 'Synced',
-      detail: 'Mumbai → Paris travel graph generated with 5 connected bookings.',
-    },
-    {
-      id: 'ch-2',
-      time: '12:00 PM',
-      bookingTitle: 'Flight AI-142',
-      bookingType: 'flight',
-      action: 'Disruption Detected',
-      detail: 'Inbound delay +2h announced. Automated dependency ripple analysis initiated.',
-    },
-  ]);
+  // Dynamically calculated downstream impact based on user's selected delay
+  const impactResult = useMemo(() => {
+    return computeDynamicImpact(trip.bookings, delayMinutes);
+  }, [trip.bookings, delayMinutes]);
 
-  const [alerts, setAlerts] = useState<RiskAlert[]>(INITIAL_ALERTS);
+  const selectedPlan = useMemo(() => {
+    return impactResult.recoveryOptions.find((p) => p.id === selectedPlanId) || impactResult.recoveryOptions[0];
+  }, [impactResult.recoveryOptions, selectedPlanId]);
 
-  // Calculate live bookings & impact
-  const { bookings, impact } = useMemo(() => {
-    if (isRecovered && selectedPlan) {
-      const mutatedBookings = INITIAL_BOOKINGS.map((b) => {
-        if (b.id === 'b-flight') {
+  const loadDemoTrip = () => {
+    persistTrip(INITIAL_DEMO_TRIP, false, 180);
+    setDelayMinutes(180);
+    setDisruptionChoice('flight_delayed');
+    setSelectedPlanId('recommended');
+    setScreen('dashboard');
+  };
+
+  const resetDemo = () => {
+    persistTrip(INITIAL_DEMO_TRIP, false, 180);
+    setDelayMinutes(180);
+    setSelectedPlanId('recommended');
+    setScreen('dashboard');
+  };
+
+  const updateTripMeta = (meta: { name: string; destination: string; startDate: string; endDate: string }) => {
+    const updated: Trip = {
+      ...trip,
+      ...meta,
+    };
+    persistTrip(updated);
+  };
+
+  const addBooking = (b: Omit<Booking, 'id'>) => {
+    const newBooking: Booking = {
+      ...b,
+      id: `b-${Date.now()}`,
+    };
+    const updated: Trip = {
+      ...trip,
+      bookings: [...trip.bookings, newBooking],
+    };
+    persistTrip(updated);
+  };
+
+  const updateBooking = (id: string, updates: Partial<Booking>) => {
+    const updated: Trip = {
+      ...trip,
+      bookings: trip.bookings.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+    };
+    persistTrip(updated);
+  };
+
+  const deleteBooking = (id: string) => {
+    const updated: Trip = {
+      ...trip,
+      bookings: trip.bookings.filter((b) => b.id !== id),
+    };
+    persistTrip(updated);
+  };
+
+  const runDisruptionSimulation = () => {
+    const updated: Trip = {
+      ...trip,
+      status: 'Disrupted',
+      bookings: trip.bookings.map((b) => {
+        if (b.type === 'flight') {
           return {
             ...b,
-            startTime: '12:00',
-            endTime: '16:40',
-            status: 'normal' as const,
-            statusLabel: 'DELAYED (+2h)',
-            notes: 'Accommodated in recovery plan.',
+            status: 'delayed' as const,
+            statusLabel: `Delayed (${impactResult.flight.delayFormatted})`,
+            changeNote: `New arrival expected at ${impactResult.flight.newArrival}`,
           };
         }
-        if (b.id === 'b-transfer') {
-          return {
-            ...b,
-            startTime: '16:55',
-            endTime: '17:40',
-            status: 'recovered' as const,
-            statusLabel: 'RE-DISPATCHED (16:55)',
-            bufferMinutes: 25,
-            bufferStatus: 'safe' as const,
-            notes: 'Chauffeur updated to flight touchdown at 16:40 + 15m customs buffer.',
-          };
+        if (b.type === 'transfer') {
+          const transferImpact = impactResult.impactChain.find((i) => i.type === 'transfer');
+          if (transferImpact) {
+            return {
+              ...b,
+              status: transferImpact.impactLevel === 'affected' ? ('likely_missed' as const) : ('at_risk' as const),
+              statusLabel: transferImpact.statusLabel,
+            };
+          }
         }
-        if (b.id === 'b-hotel') {
-          return {
-            ...b,
-            startTime: '17:45',
-            status: 'recovered' as const,
-            statusLabel: 'CHECK-IN CONFIRMED',
-            bufferMinutes: 90,
-            bufferStatus: 'safe' as const,
-            notes: 'Late check-in confirmed by Hotel Le Grand concierge.',
-          };
+        if (b.type === 'hotel') {
+          const hotelImpact = impactResult.impactChain.find((i) => i.type === 'hotel');
+          if (hotelImpact) {
+            return {
+              ...b,
+              status: 'checkin_delayed' as const,
+              statusLabel: hotelImpact.statusLabel,
+            };
+          }
         }
-        if (b.id === 'b-activity') {
-          return {
-            ...b,
-            startTime: selectedPlan.id === 'plan-cheapest' ? 'Tomorrow 10:00' : '19:15',
-            endTime: selectedPlan.id === 'plan-cheapest' ? 'Tomorrow 12:00' : '20:45',
-            status: 'recovered' as const,
-            statusLabel: selectedPlan.id === 'plan-cheapest' ? 'RESCHEDULED (TOMORROW)' : 'SLOT SHIFTED (19:15)',
-            bufferMinutes: 45,
-            bufferStatus: 'safe' as const,
-            notes: 'Seine cruise boarding confirmed. Priority pier pass preserved.',
-          };
-        }
-        if (b.id === 'b-dinner') {
-          return {
-            ...b,
-            startTime: '21:00',
-            status: 'normal' as const,
-            statusLabel: 'ON SCHEDULE',
-            bufferMinutes: 75,
-            bufferStatus: 'safe' as const,
-          };
+        if (b.type === 'activity') {
+          const tourImpact = impactResult.impactChain.find((i) => i.type === 'activity');
+          if (tourImpact) {
+            return {
+              ...b,
+              status: 'at_risk' as const,
+              statusLabel: tourImpact.statusLabel,
+            };
+          }
         }
         return b;
-      });
-
-      return {
-        bookings: mutatedBookings,
-        impact: {
-          totalScore: 12,
-          severity: 'LOW' as const,
-          timeImpact: selectedPlan.timeImpactMinutes,
-          costImpact: Math.round(selectedPlan.additionalCost / 200),
-          bookingsAffected: 0,
-          activityRisk: 0,
-          affectedCount: 0,
-          totalBookings: mutatedBookings.length,
-          propagationPath: [],
-        },
-      };
-    }
-
-    return calculateRippleEffects(INITIAL_BOOKINGS, activeDisruption);
-  }, [activeDisruption, isRecovered, selectedPlan]);
-
-  const recoveryPlans = useMemo(() => {
-    return rankRecoveryPlans(BASE_RECOVERY_PLANS, weights);
-  }, [weights]);
-
-  const createTrip = (tripData: Omit<TripSummary, 'id' | 'hasDisruption' | 'statusText'>) => {
-    const newTrip: TripSummary = {
-      ...tripData,
-      id: `trip-${Date.now()}`,
-      hasDisruption: false,
-      statusText: '✓ Trip ready • All plans on schedule',
+      }),
     };
-    setTrips((prev) => [newTrip, ...prev]);
-    setCurrentTripId(newTrip.id);
-    setIsCreateTripOpen(false);
-    setActiveTab('mytrip');
+    persistTrip(updated, false, delayMinutes);
+    setScreen('impact_analysis');
   };
 
-  const applyReportedDisruption = (hours: number) => {
-    let scenario = DISRUPTION_SCENARIOS[0]; // 2h default
-    if (hours === 1) scenario = DISRUPTION_SCENARIOS[1];
-    if (hours >= 4) scenario = DISRUPTION_SCENARIOS[2];
+  const applyRecoveryPlan = (planId: 'recommended' | 'lowest_cost' | 'fastest') => {
+    setSelectedPlanId(planId);
+    setIsApplyingPlan(true);
 
-    setActiveDisruption(scenario);
-    setIsRecovered(false);
-    setSelectedPlan(null);
+    setTimeout(() => {
+      let updatedBookings = [...trip.bookings];
+      const plan = impactResult.recoveryOptions.find((p) => p.id === planId) || impactResult.recoveryOptions[0];
 
-    setTrips((prev) =>
-      prev.map((t) =>
-        t.id === 'trip-paris'
-          ? { ...t, hasDisruption: true, statusText: `⚠ 1 disruption • 3 bookings affected` }
-          : t
-      )
-    );
-  };
+      if (planId === 'recommended') {
+        const transferChange = plan.changes.find((c) => c.type === 'transfer');
+        const tourChange = plan.changes.find((c) => c.type === 'activity');
 
-  const applyDisruption = (scenarioId: string) => {
-    const scenario = DISRUPTION_SCENARIOS.find((s) => s.id === scenarioId) || null;
-    setActiveDisruption(scenario);
-    setIsRecovered(false);
-    setSelectedPlan(null);
-  };
-
-  const resetTrip = () => {
-    setActiveDisruption(null);
-    setIsRecovered(false);
-    setSelectedPlan(null);
-    setAlerts(INITIAL_ALERTS.filter((a) => a.level === 'info'));
-    setTrips((prev) =>
-      prev.map((t) =>
-        t.id === 'trip-paris'
-          ? { ...t, hasDisruption: false, statusText: '✓ Trip ready • All plans on schedule' }
-          : t
-      )
-    );
-  };
-
-  const updateWeights = (newWeights: Partial<PreferenceWeights>) => {
-    setWeights((prev) => ({ ...prev, ...newWeights }));
-  };
-
-  const applyRecoveryPlan = (planId: string) => {
-    const plan = recoveryPlans.find((p) => p.id === planId) || recoveryPlans[0];
-    setSelectedPlan(plan);
-    setIsRecovered(true);
-
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const auditEntries: ChangeLogEntry[] = [
-      {
-        id: `ch-${Date.now()}-1`,
-        time: now,
-        bookingTitle: 'Airport Transfer',
-        bookingType: 'transfer',
-        action: 'Booking Replaced',
-        detail: `Transferred to 16:55 pickup at Terminal 2E (+₹${plan.additionalCost}).`,
-      },
-      {
-        id: `ch-${Date.now()}-2`,
-        time: now,
-        bookingTitle: 'Hotel Le Grand',
-        bookingType: 'hotel',
-        action: 'Check-in Recalculated',
-        detail: 'Estimated arrival 17:45 logged. Concierge holds room safely.',
-      },
-      {
-        id: `ch-${Date.now()}-3`,
-        time: now,
-        bookingTitle: 'Paris City Tour',
-        bookingType: 'activity',
-        action: plan.activitiesPreserved ? 'Slot Preserved' : 'Rescheduled',
-        detail: plan.activitiesPreserved
-          ? 'Twilight slot (19:15) assigned. Priority boarding active.'
-          : 'Rescheduled to tomorrow 10:00 AM.',
-      },
-    ];
-
-    setChangeHistory((prev) => [...auditEntries, ...prev]);
-
-    setAlerts((prev) =>
-      prev.map((alert) =>
-        alert.relatedBookingId === 'b-transfer' || alert.relatedBookingId === 'b-activity'
-          ? {
-              ...alert,
-              level: 'resolved' as const,
-              title: `✓ Resolved: ${alert.title.replace('At Risk:', '').replace('Risk:', '')}`,
-              description: `Accommodated by recovery plan: ${plan.name} (${plan.tagline}).`,
-              bufferInfo: 'Buffer: Restored to safe margin',
+        updatedBookings = updatedBookings.map((b) => {
+          if (b.type === 'flight') {
+            return {
+              ...b,
+              status: 'confirmed' as const,
+              statusLabel: `Confirmed (${impactResult.flight.newArrival} Arr)`,
+              time: `10:40 AM (Dep) / ${impactResult.flight.newArrival} (Arr)`,
+              isUpdated: false,
+              changeNote: `Delayed by ${impactResult.flight.delayFormatted} • Accommodated in recovery plan`,
+            };
+          }
+          if (b.type === 'transfer') {
+            // Extract the new time from change text e.g. "7:30 PM → 8:45 PM"
+            const match = transferChange?.changeText.match(/→\s*([0-9:APM\s]+)/i);
+            const newTime = match ? match[1].split('(')[0].trim() : '11:00 PM';
+            return {
+              ...b,
+              time: newTime,
+              status: 'updated' as const,
+              statusLabel: 'Updated',
+              isUpdated: true,
+              changeNote: `Chauffeur re-dispatched to ${newTime} based on flight touchdown`,
+            };
+          }
+          if (b.type === 'hotel') {
+            return {
+              ...b,
+              status: 'updated' as const,
+              statusLabel: 'Updated',
+              isUpdated: true,
+              changeNote: 'Late arrival check-in confirmed by Hotel Lumière concierge',
+            };
+          }
+          if (b.type === 'activity') {
+            if (tourChange?.isUpdated) {
+              return {
+                ...b,
+                date: '20 SEP',
+                time: '6:30 AM',
+                status: 'updated' as const,
+                statusLabel: 'Updated',
+                isUpdated: true,
+                changeNote: 'Moved from 19 Sep to 20 Sep (Morning slot)',
+              };
             }
-          : alert
-      )
-    );
+            return {
+              ...b,
+              status: 'confirmed' as const,
+              statusLabel: 'Confirmed',
+              isUpdated: false,
+            };
+          }
+          if (b.type === 'train') {
+            return {
+              ...b,
+              status: 'confirmed' as const,
+              statusLabel: 'Confirmed',
+              isUpdated: false,
+            };
+          }
+          return b;
+        });
+      } else if (planId === 'lowest_cost') {
+        const transferChange = plan.changes.find((c) => c.type === 'transfer');
+        const match = transferChange?.changeText.match(/→\s*([0-9:APM\s]+)/i);
+        const newTime = match ? match[1].split('(')[0].trim() : '11:00 PM';
 
-    setTrips((prev) =>
-      prev.map((t) =>
-        t.id === 'trip-paris'
-          ? { ...t, hasDisruption: false, statusText: '✓ Trip recovered • Back on track' }
-          : t
-      )
-    );
+        updatedBookings = updatedBookings.map((b) => {
+          if (b.type === 'flight') {
+            return {
+              ...b,
+              status: 'confirmed' as const,
+              statusLabel: `Confirmed (${impactResult.flight.newArrival} Arr)`,
+              time: `10:40 AM (Dep) / ${impactResult.flight.newArrival} (Arr)`,
+              isUpdated: false,
+            };
+          }
+          if (b.type === 'transfer') {
+            return {
+              ...b,
+              time: newTime,
+              status: 'updated' as const,
+              statusLabel: 'Updated',
+              isUpdated: true,
+              changeNote: `Chauffeur rescheduled to ${newTime}`,
+            };
+          }
+          if (b.type === 'hotel') {
+            return {
+              ...b,
+              status: 'updated' as const,
+              statusLabel: 'Updated',
+              isUpdated: true,
+              changeNote: 'Late check-in confirmed',
+            };
+          }
+          if (b.type === 'activity') {
+            return {
+              ...b,
+              status: 'delayed' as const,
+              statusLabel: 'Cancelled',
+              isUpdated: true,
+              changeNote: 'Cancelled • ₹3,500 full refund credited',
+            };
+          }
+          return b;
+        });
+      } else if (planId === 'fastest') {
+        updatedBookings = updatedBookings.map((b) => {
+          if (b.type === 'flight') {
+            return {
+              ...b,
+              title: 'Flight (Air France AF-218)',
+              time: '11:15 AM (Dep) / 4:35 PM (Arr)',
+              status: 'updated' as const,
+              statusLabel: 'Updated',
+              isUpdated: true,
+              changeNote: 'Rebooked onto direct Air France AF-218 (+₹6,800)',
+            };
+          }
+          if (b.type === 'transfer') {
+            return {
+              ...b,
+              time: '7:30 PM',
+              status: 'confirmed' as const,
+              statusLabel: 'Confirmed',
+              isUpdated: false,
+              changeNote: 'Original pickup retained',
+            };
+          }
+          if (b.type === 'hotel') {
+            return {
+              ...b,
+              time: '9:00 PM',
+              status: 'confirmed' as const,
+              statusLabel: 'Check-in',
+              isUpdated: false,
+            };
+          }
+          if (b.type === 'activity') {
+            return {
+              ...b,
+              date: '19 SEP',
+              time: '10:00 AM',
+              status: 'confirmed' as const,
+              statusLabel: 'Confirmed',
+              isUpdated: false,
+            };
+          }
+          return b;
+        });
+      }
+
+      const updatedTrip: Trip = {
+        ...trip,
+        status: 'Stable',
+        bookings: updatedBookings,
+      };
+      persistTrip(updatedTrip, true);
+      setIsApplyingPlan(false);
+      setScreen('updated_itinerary');
+    }, 250); // fast, responsive micro-transition
   };
 
   return (
     <TripContext.Provider
       value={{
-        currentPage,
-        setCurrentPage,
-        trips,
-        currentTripId,
-        setCurrentTripId,
-        isCreateTripOpen,
-        setIsCreateTripOpen,
-        createTrip,
-        bookings,
-        disruptions: DISRUPTION_SCENARIOS,
-        activeDisruption,
-        impact,
-        recoveryPlans,
-        selectedPlan,
+        screen,
+        setScreen,
+        trip,
+        delayMinutes,
+        setDelayMinutes,
+        disruptionChoice,
+        setDisruptionChoice,
+        selectedFlightId,
+        setSelectedFlightId,
+        selectedPlanId,
+        setSelectedPlanId,
         isRecovered,
-        weights,
-        changeHistory,
-        alerts,
-        activeTab,
-        selectedBooking,
-        isAssistantOpen,
-        isChangeHistoryOpen,
-        isDisruptionModalOpen,
-        disruptionStep,
-        selectedDisruptionReason,
-        delayHours,
-        setActiveTab,
-        setSelectedBooking,
-        setIsAssistantOpen,
-        setIsChangeHistoryOpen,
-        setIsDisruptionModalOpen,
-        setDisruptionStep,
-        setSelectedDisruptionReason,
-        setDelayHours,
-        applyReportedDisruption,
-        applyDisruption,
-        resetTrip,
-        updateWeights,
+        impactResult,
+        selectedPlan,
+        isApplyingPlan,
+        loadDemoTrip,
+        resetDemo,
+        updateTripMeta,
+        addBooking,
+        updateBooking,
+        deleteBooking,
+        runDisruptionSimulation,
         applyRecoveryPlan,
+        editingBooking,
+        setEditingBooking,
+        isSignInModalOpen,
+        setIsSignInModalOpen,
       }}
     >
       {children}

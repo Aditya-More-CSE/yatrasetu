@@ -1,237 +1,134 @@
-🧭 YatraSetu — TripRescue
+# 🧭 YatraSetu — TripRescue
 
-«AI-powered travel disruption recovery for smarter, faster journeys.»
+> **"Your trip changes. Your plan adapts."**  
+> A premium, trustworthy travel disruption recovery platform built for hackathon demonstration. When an itinerary component breaks, YatraSetu immediately calculates the downstream ripple effects and presents actionable recovery options.
 
-YatraSetu — TripRescue is an AI Travel Disruption Recovery Engine designed to help travelers respond intelligently when unexpected disruptions affect their journey.
-
-Instead of leaving travelers to manually figure out what to do after a cancellation, delay, disruption, or change of plans, YatraSetu focuses on turning a disrupted journey into a clear, actionable recovery plan.
-
----
-
-✨ Key Features
-
-- 🚨 Travel Disruption Recovery — Helps users respond to unexpected changes affecting their journey.
-- 🤖 AI-Powered Assistance — Uses intelligent decision-making to provide relevant recovery guidance.
-- 🧭 Alternative Planning — Helps identify practical alternatives when the original journey is disrupted.
-- 📋 Action-Oriented Recommendations — Converts a complicated disruption into clear next steps.
-- 🎯 User-Centric Experience — Designed around simplicity, speed, and usability during stressful travel situations.
-- 📱 Responsive Interface — Designed to work across desktop and mobile screen sizes.
-- ⚡ Fast & Simple Workflow — Keeps the recovery process focused instead of overwhelming users with unnecessary information.
+🌐 **Live Deployment**: [https://yatrasetu-tau.vercel.app/](https://yatrasetu-tau.vercel.app/)
 
 ---
 
-🎯 Problem
+## ✨ Key Capabilities
 
-Travel disruptions can turn a simple journey into a complicated problem.
-
-Delays, cancellations, missed connections, route changes, and other unexpected events can leave travelers searching across multiple platforms to understand their options and decide what to do next.
-
-The problem is not only knowing that something went wrong — it is knowing what to do next.
-
-YatraSetu addresses this gap by providing an intelligent recovery experience that helps transform a disrupted travel situation into a structured set of actionable options.
-
----
-
-💡 Our Solution
-
-YatraSetu acts as a Trip Rescue layer between a travel disruption and the traveler's next decision.
-
-The platform focuses on:
-
-1. Understanding the disruption
-2. Evaluating the travel situation
-3. Identifying possible recovery options
-4. Presenting actionable recommendations
-5. Helping the traveler continue their journey with less confusion
-
-Core Vision
-
-«Don't just detect a disrupted journey. Help the traveler recover from it.»
+- 🚨 **Real-Time Downstream Impact Mapping**: When a flight or segment slips, YatraSetu immediately traces downstream connections (transfers, hotel check-ins, scheduled activities) and flags affected bookings.
+- ⏱️ **Interactive Dynamic Delay Simulation**: Supports preset delays (`+30m`, `+1h`, `+2h`, `+3h`, `+5h`) or custom hour/minute inputs with live recalculated touchdown and arrival buffers.
+- 🎯 **Multi-Objective Recovery Plans**:
+  - **Option 1 (Recommended)**: Preserves airfare, shifts chauffeur transfer, and moves morning activity.
+  - **Option 2 (Lowest Cost)**: Preserves flight, re-dispatches transfer, and claims an instant refund credit for missed tours.
+  - **Option 3 (Fastest)**: Rebooks to direct alternate flight, preserving transfer and activities without schedule slip.
+- 🔄 **Stateful End-to-End Synchronization**: Applying a plan modifies central trip state in memory and `localStorage`, keeping the dashboard permanently updated.
+- 📱 **Clean, Restrained Design**: Deep navy blue, crisp white surfaces, and status colors strictly reserved for operational health (Emerald for Confirmed/Safe, Amber for At Risk, Rose for Disrupted).
 
 ---
 
-🌐 Live Demo
+## 🚀 Core 8-Step Flow
 
-🚀 Try YatraSetu
+```mermaid
+flowchart TD
+  P1["Page 1: Landing Page"] -->|"Get Started"| P2["Page 2: Create Trip"]
+  P1 -->|"Try Demo Trip"| P3["Page 3: Trip Dashboard"]
+  P2 -->|"Continue to Trip"| P3
+  P3 -->|"Simulate Disruption"| P4["Page 4: Disruption Simulation"]
+  P3 -->|"Edit Trip"| P2
+  P4 -->|"Analyze Impact"| P5["Page 5: Impact Analysis"]
+  P5 -->|"Find Recovery Options"| P6["Page 6: Recovery Options"]
+  P6 -->|"View Plan"| P7["Page 7: Recovery Plan Details"]
+  P7 -->|"Apply Recovery Plan"| P8["Page 8: Updated Itinerary"]
+  P7 -->|"Back to Options"| P6
+  P8 -->|"Back to Dashboard / View Full Trip"| P3
+```
 
-"YatraSetu — Live Demo" (https://reference-url-citation.invalid/1)
+1. **Page 1 — Landing Page**:
+   - Official YatraSetu logo with preserved proportions.
+   - Editorial headline: *"Your trip changes. Your plan adapts."*
+   - Direct CTA: *"Try Demo Trip"* loads predefined Mumbai → Paris → Amsterdam trip instantly.
+   - Connected travel itinerary hero visual: `Flight → Transfer → Hotel → Activity → Train`.
+   - The Problem section: *"One change can affect the entire journey."* with interactive cascade toggle.
+   - Three-step explanation: `01 Add your trip`, `02 Understand the impact`, `03 Choose a recovery plan`.
 
-Deployment: Vercel
+2. **Page 2 — Create Trip & Itinerary Builder**:
+   - Set Trip Name, Destination, Start & End Dates with validation.
+   - Add/Edit/Delete components: Flight, Hotel, Train, Transfer, Activity.
+   - *"Continue to Trip"* loads custom itinerary into Dashboard.
 
-The prototype is publicly accessible through the live deployment above.
+3. **Page 3 — Trip Dashboard**:
+   - Status badge: *"On Track"* (or *"Stable / Recovered"*).
+   - Chronological timeline with type icons, dates, times, routes, status badges, and inline editing.
+   - Sidebar summary: Total items, flights, hotels, trains, transfers, activities, and total trip cost.
+
+4. **Page 4 — Disruption Simulation**:
+   - Realistic event selection (Flight delayed, Flight cancelled, Train delayed, Hotel unavailable, Activity cancelled).
+   - Interactive delay controls: Quick presets or custom hour/minute selector.
+   - Live recalculation preview card showing original arrival vs new expected arrival.
+
+5. **Page 5 — Impact Analysis**:
+   - Visual dependency chain dynamically calculated based on delay:
+     - `Flight` 🔴 Delayed
+     - `Airport Transfer` 🔴 Pickup missed / 🟠 At risk
+     - `Hotel` 🟠 Check-in delayed
+     - `Activity` 🟠 At risk / severe turnaround conflict
+     - `Train` 🟢 No impact (safe onward connection)
+   - Summary of affected items and primary CTA: *"Find Recovery Options"*.
+
+6. **Page 6 — Recovery Options**:
+   - Differentiated plans comparison with standardized metric ordering:
+     - **Option 1 (Recommended)**: *"Keep flight, Move airport transfer, Reschedule tour"*
+     - **Option 2 (Lowest Cost)**: *"Keep flight, Cancel tour, Claim activity refund"*
+     - **Option 3 (Fastest)**: *"Change flight, Keep transfer, Keep activity"*
+   - Side-by-side comparison matrix with *"View Plan"* buttons.
+
+7. **Page 7 — Recovery Plan Details**:
+   - Exact Before $\rightarrow$ After comparison for each booking.
+   - Summary statistics: Additional cost, bookings changed, bookings unchanged.
+   - One-click *"Apply Recovery Plan"* with instant feedback.
+
+8. **Page 8 — Updated Itinerary**:
+   - Success state: *"Trip recovered. Your itinerary has been updated."*
+   - Chronological recovered timeline with updated bookings visually distinguished.
+   - Summary metrics: Trip Status *Stable*, bookings updated, bookings unchanged.
+   - Returning to the Dashboard permanently reflects the recovered state.
 
 ---
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 
-Frontend
-
-- React
-- TypeScript
-- JavaScript
-- HTML5
-- CSS3
-
-Development & Build
-
-- Vite
-- npm
-
-Deployment
-
-- Vercel
+- **Frontend**: React 19, TypeScript, Vite
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Hosting**: Vercel
 
 ---
 
-📁 Project Structure
+## ⚙️ Getting Started
 
-yatrasetu/
-│
-├── public/
-│
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── assets/
-│   ├── App.tsx
-│   └── main.tsx
-│
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── index.html
-└── README.md
+```bash
+# 1. Clone the repository
+git clone https://github.com/Aditya-More-CSE/yatrasetu.git
 
-«The exact internal structure may evolve as the project develops.»
-
----
-
-⚙️ Getting Started
-
-Prerequisites
-
-Make sure you have installed:
-
-- Node.js
-- npm
-- Git
-
-1. Clone the repository
-
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-
-2. Enter the project directory
-
+# 2. Enter directory
 cd yatrasetu
 
-3. Install dependencies
-
+# 3. Install dependencies
 npm install
 
-4. Start the development server
-
+# 4. Start development server
 npm run dev
 
-The application will then be available at the local development URL provided by Vite.
+# 5. Build for production
+npm run build
+```
 
 ---
 
-🚀 Deployment
+## 🚀 Deployment to Vercel
 
-YatraSetu is deployed using Vercel.
-
-GitHub Repository
-        │
-        ▼
-      Vercel
-        │
-        ▼
- Production Build
-        │
-        ▼
-🌐 Live YatraSetu Application
-
-Live Deployment
-
-https://yatrasetu-tau.vercel.app/
+The project is zero-config ready for Vercel:
+- **Framework Preset**: Vite
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Live URL**: [https://yatrasetu-tau.vercel.app/](https://yatrasetu-tau.vercel.app/)
 
 ---
 
-🧪 Project Status
+## 👥 Team YatraSetu
 
-Status: 🚀 Hackathon Prototype
-
-YatraSetu is currently developed as a functional prototype demonstrating the core product concept, user experience, and travel-disruption recovery workflow.
-
-The architecture and feature set can be extended for production-scale deployment with real-time travel data, live transportation APIs, notifications, authentication, and additional intelligent decision-making capabilities.
-
----
-
-🔮 Future Roadmap
-
-Phase 1 — Prototype
-
-- Core disruption recovery workflow
-- Intelligent recommendations
-- Responsive interface
-- Interactive user experience
-
-Phase 2 — Real-Time Intelligence
-
-- Real-time transportation data
-- Live delay and cancellation detection
-- Dynamic alternative recommendations
-- Travel status monitoring
-
-Phase 3 — Personalization
-
-- User profiles
-- Saved journeys
-- Personalized recovery preferences
-- Smart notifications
-
-Phase 4 — Production Scale
-
-- Multi-provider travel integration
-- Real-time event processing
-- Scalable backend infrastructure
-- Advanced AI decision-making
-- Broader transportation coverage
-
----
-
-🎯 Why YatraSetu?
-
-Most travel experiences are optimized for planning a journey.
-
-YatraSetu focuses on what happens when the plan breaks.
-
-The product is built around a simple principle:
-
-«When travel doesn't go according to plan, the next best action should be easy to find.»
-
----
-
-👥 Team
-
-Team YatraSetu
-
-Built as a collaborative hackathon project focused on creating a practical solution for travel disruption recovery.
-
----
-
-📄 License
-
-This project was developed as a hackathon prototype.
-
-All rights reserved unless otherwise specified by the project contributors.
-
----
-
-🏆 Built for Innovation
-
-YatraSetu — TripRescue
-
-Recover the journey. Continue the journey.
-
-🌐 Live Demo: https://yatrasetu-tau.vercel.app/
+Built as a collaborative hackathon project focused on creating an actionable, trustworthy solution for travel disruption recovery.

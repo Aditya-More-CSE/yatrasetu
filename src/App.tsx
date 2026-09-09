@@ -1,79 +1,48 @@
 import React from 'react';
 import { TripProvider, useTrip } from './context/TripContext';
-import { LandingPage } from './components/landing/LandingPage';
-import { AuthModal } from './components/auth/AuthModal';
-import { Sidebar } from './components/layout/Sidebar';
-import { Topbar } from './components/layout/Topbar';
-import { BottomNav } from './components/layout/BottomNav';
-import { MyTripsHub } from './components/trips/MyTripsHub';
-import { CreateTripModal } from './components/trips/CreateTripModal';
-import { TimelineView } from './components/itinerary/TimelineView';
-import { DependencyGraph } from './components/itinerary/DependencyGraph';
-import { ImpactAnalysis } from './components/impact/ImpactAnalysis';
-import { RecoveryOptions } from './components/recovery/RecoveryOptions';
-import { WhatIfSimulator } from './components/demo/WhatIfSimulator';
-import { AlertsView } from './components/alerts/AlertsView';
-import { SettingsView } from './components/settings/SettingsView';
-import { ReportDisruptionModal } from './components/disruption/ReportDisruptionModal';
-import { ChangeHistoryDrawer } from './components/history/ChangeHistoryDrawer';
-import { TripAssistant } from './components/assistant/TripAssistant';
-import { BookingDetailModal } from './components/itinerary/BookingDetailModal';
+import { Navbar } from './components/navigation/Navbar';
+import { LandingPage } from './components/screens/LandingPage';
+import { CreateTripView } from './components/screens/CreateTripView';
+import { TripDashboardView } from './components/screens/TripDashboardView';
+import { DisruptionSimView } from './components/screens/DisruptionSimView';
+import { ImpactAnalysisView } from './components/screens/ImpactAnalysisView';
+import { RecoveryOptionsView } from './components/screens/RecoveryOptionsView';
+import { RecoveryPlanDetailsView } from './components/screens/RecoveryPlanDetailsView';
+import { UpdatedItineraryView } from './components/screens/UpdatedItineraryView';
+import { SignInModal } from './components/modals/SignInModal';
+import { EditBookingModal } from './components/modals/EditBookingModal';
 
-const ProductApp: React.FC = () => {
-  const { activeTab } = useTrip();
+const AppContent: React.FC = () => {
+  const { screen } = useTrip();
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-100 font-sans text-slate-900">
-      {/* Persistent Desktop Sidebar */}
-      <div className="hidden md:flex shrink-0">
-        <Sidebar />
-      </div>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col selection:bg-blue-100 selection:text-blue-900">
+      {/* Universal Topbar with Official Brand Logo & Global Actions */}
+      <Navbar />
 
-      {/* Dynamic Main View Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc] overflow-y-auto">
-        <Topbar />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-5xl w-full mx-auto pb-24 md:pb-12">
-          {activeTab === 'trips_list' && <MyTripsHub />}
-          {activeTab === 'mytrip' && <TimelineView />}
-          {activeTab === 'graph' && <DependencyGraph />}
-          {activeTab === 'impact' && <ImpactAnalysis />}
-          {activeTab === 'recovery' && <RecoveryOptions />}
-          {activeTab === 'whatif' && <WhatIfSimulator />}
-          {activeTab === 'alerts' && <AlertsView />}
-          {activeTab === 'settings' && <SettingsView />}
-        </main>
+      {/* Main Dynamic View Area */}
+      <main className="flex-1">
+        {screen === 'landing' && <LandingPage />}
+        {screen === 'create_trip' && <CreateTripView />}
+        {screen === 'dashboard' && <TripDashboardView />}
+        {screen === 'disruption_sim' && <DisruptionSimView />}
+        {screen === 'impact_analysis' && <ImpactAnalysisView />}
+        {screen === 'recovery_options' && <RecoveryOptionsView />}
+        {screen === 'plan_details' && <RecoveryPlanDetailsView />}
+        {screen === 'updated_itinerary' && <UpdatedItineraryView />}
+      </main>
 
-        {/* Global Drawers & Modals */}
-        <CreateTripModal />
-        <ReportDisruptionModal />
-        <ChangeHistoryDrawer />
-        <TripAssistant />
-        <BookingDetailModal />
-        <BottomNav />
-      </div>
+      {/* Global Action Modals */}
+      <SignInModal />
+      <EditBookingModal />
     </div>
   );
-};
-
-const RootRouter: React.FC = () => {
-  const { currentPage } = useTrip();
-
-  if (currentPage === 'landing' || currentPage === 'auth') {
-    return (
-      <>
-        <LandingPage />
-        <AuthModal />
-      </>
-    );
-  }
-
-  return <ProductApp />;
 };
 
 export default function App() {
   return (
     <TripProvider>
-      <RootRouter />
+      <AppContent />
     </TripProvider>
   );
 }
