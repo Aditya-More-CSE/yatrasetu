@@ -129,6 +129,6 @@ The project is zero-config ready for Vercel:
 
 ---
 
-## 👥 Team YatraSetu
+## 👥 Team PrimeCodex
 
 Built as a collaborative hackathon project focused on creating an actionable, trustworthy solution for travel disruption recovery.
