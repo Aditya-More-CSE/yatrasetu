@@ -129,6 +129,6 @@ The project is zero-config ready for Vercel:
 
 ---
 
-## 👥 Team PrimeCodex
+## 👥 Team CodeHunters
 
 Built as a collaborative hackathon project focused on creating an actionable, trustworthy solution for travel disruption recovery.
